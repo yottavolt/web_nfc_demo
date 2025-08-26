@@ -1,1 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Temperature Display</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #f0f0f0;
+    }
+    .temp-box {
+      background: white;
+      padding: 2em;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+    .temp-value {
+      font-size: 3em;
+      color: #ff5722;
+      margin-bottom: 1em;
+    }
+    .bar-container {
+      width: 100%;
+      background: #ddd;
+      border-radius: 20px;
+      overflow: hidden;
+      height: 20px;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(to right, #00f, #0ff, #0f0, #ff0, #f00);
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="temp-box">
+    <div>Current Temperature:</div>
+    <div class="temp-value" id="temp">--</div>
+    <div class="bar-container">
+      <div class="bar-fill" id="bar" style="width: 0%;"></div>
+    </div>
+  </div>
 
+  <script>
+    function getTempFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const temp = params.get("temp");
+      return temp ? parseFloat(temp.replace(",", ".")) : null;
+    }
+
+    function mapTempToPercent(temp) {
+      const min = -20;
+      const max = 50;
+      const clamped = Math.max(min, Math.min(max, temp));
+      return ((clamped - min) / (max - min)) * 100;
+    }
+
+    const tempValue = getTempFromURL();
+    const tempDisplay = document.getElementById("temp");
+    const barFill = document.getElementById("bar");
+
+    if (tempValue !== null && !isNaN(tempValue)) {
+      tempDisplay.textContent = `${tempValue.toFixed(1)}°C`;
+      barFill.style.width = `${mapTempToPercent(tempValue)}%`;
+    } else {
+      tempDisplay.textContent = "N/A";
+      barFill.style.width = "0%";
+    }
+  </script>
+</body>
+</html>
