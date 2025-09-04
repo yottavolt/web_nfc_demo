@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Temperature Display</title>
-  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiVGVtcGVyYXR1cmUgQXBwIiwic2hvcnRfbmFtZSI6IlRlbXBBcHAiLCJzdGFydF91cmwiOiIvIiwicmVsYXRlZF91cmxzIjpbIi8iXSwgImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiaWNvbnMiOlt7InNyYyI6Ii9mYXZpY29uLnBuZyIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9wbmcifV19" />
   <style>
     body {
       font-family: sans-serif;
@@ -42,20 +41,6 @@
       background: linear-gradient(to right, #00f, #0ff, #0f0, #ff0, #f00);
       transition: width 0.3s ease;
     }
-    #timestamp {
-      margin-top: 1em;
-      font-size: 0.9em;
-      color: #555;
-    }
-    #data-age {
-      position: fixed;
-      bottom: 5px;
-      font-size: 0.8em;
-      color: #666;
-      text-align: center;
-      width: 100%;
-      font-family: sans-serif;
-    }
   </style>
 </head>
 <body>
@@ -65,9 +50,7 @@
     <div class="bar-container">
       <div class="bar-fill" id="bar" style="width: 0%;"></div>
     </div>
-    <div id="timestamp"></div>
   </div>
-  <div id="data-age"></div>
 
   <script>
     function getTempFromURL() {
@@ -86,64 +69,13 @@
     const tempValue = getTempFromURL();
     const tempDisplay = document.getElementById("temp");
     const barFill = document.getElementById("bar");
-    const timestamp = document.getElementById("timestamp");
-    const dataAgeDisplay = document.getElementById("data-age");
-
-    let timestampStored;
 
     if (tempValue !== null && !isNaN(tempValue)) {
       tempDisplay.textContent = `${tempValue.toFixed(1)}°C`;
       barFill.style.width = `${mapTempToPercent(tempValue)}%`;
-      timestampStored = new Date().toISOString();
-      localStorage.setItem("lastTemp", tempValue);
-      localStorage.setItem("lastTime", timestampStored);
     } else {
-      const savedTemp = localStorage.getItem("lastTemp");
-      timestampStored = localStorage.getItem("lastTime");
-      if (savedTemp) {
-        tempDisplay.textContent = `${parseFloat(savedTemp).toFixed(1)}°C`;
-        barFill.style.width = `${mapTempToPercent(savedTemp)}%`;
-        timestamp.textContent = `Last seen: ${new Date(timestampStored).toLocaleString()}`;
-      } else {
-        tempDisplay.textContent = "N/A";
-        barFill.style.width = "0%";
-      }
-    }
-
-    if (timestampStored) {
-      const startTime = new Date(timestampStored).getTime();
-      function updateAge() {
-        const now = Date.now();
-        const ageSeconds = Math.floor((now - startTime) / 1000);
-        if (ageSeconds <= 60) {
-          dataAgeDisplay.textContent = `${ageSeconds}s ago`;
-        } else {
-          dataAgeDisplay.textContent = `old`;
-        }
-      }
-      updateAge();
-      setInterval(updateAge, 1000);
-    }
-  </script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
-        self.addEventListener('install', event => {
-          event.waitUntil(
-            caches.open('temp-cache').then(cache => {
-              return cache.addAll([location.href]);
-            })
-          );
-        });
-        self.addEventListener('fetch', event => {
-          event.respondWith(
-            caches.match(event.request).then(response => {
-              return response || fetch(event.request);
-            })
-          );
-        });
-      `));
+      tempDisplay.textContent = "N/A";
+      barFill.style.width = "0%";
     }
   </script>
 </body>
