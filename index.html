@@ -140,7 +140,7 @@
       <text id="tempValue" x="100" y="100" fill="hsl(33, 100%, 50%)">23°C</text>
     </svg>
 
-    
+
 
     <div class="controls">
       <input type="number" id="tempInput" step="1" placeholder="Enter temperature (°C)" />
@@ -174,18 +174,26 @@
       return `hsl(${hue}, 100%, 50%)`;
     }
 
-    function setTemperature(t) {
-      const clamped = Math.max(MIN, Math.min(MAX, t));
-      const p = (clamped - MIN) / (MAX - MIN);
-      const offset = arcLength * (1 - p);
-      const color = colorForTemp(clamped);
-
-      progressEl.style.strokeDashoffset = offset.toString();
-      progressEl.style.stroke = color;
-      tempText.textContent = `${clamped}°C`;
-      tempText.setAttribute('fill', color);
-      tempInputEl.value = clamped.toString();
+  function setTemperature(t) {
+    if (!Number.isFinite(t)) {
+      progressEl.style.strokeDashoffset = arcLength.toString();
+      progressEl.style.stroke = '#555';
+      tempText.textContent = '--';
+      tempText.setAttribute('fill', '#888');
+      return;
     }
+
+    const clamped = Math.max(MIN, Math.min(MAX, t));
+    const p = (clamped - MIN) / (MAX - MIN);
+    const offset = arcLength * (1 - p);
+    const color = colorForTemp(clamped);
+
+    progressEl.style.strokeDashoffset = offset.toString();
+    progressEl.style.stroke = color;
+    tempText.textContent = `${clamped}°C`;
+    tempText.setAttribute('fill', color);
+  }
+
 
     function getTempFromURL() {
       const params = new URLSearchParams(window.location.search);
@@ -194,44 +202,39 @@
       return Number.isFinite(temp) ? temp : null;
     }
 
-    async function writeToNFC(temp) {
-      try {
-        const ndef = new NDEFReader();
-        await ndef.write(`Temperature: ${temp}°C`);
-        updateBtn.textContent = 'Written to NFC!';
-        setTimeout(() => updateBtn.textContent = 'Update', 2000);
-      } catch (error) {
-        console.error('❌ NFC write failed:', error);
-        alert('NFC write failed. Make sure your device supports Web NFC and you are using a secure context.');
-      }
+async function writeToNFC(temp) {
+  try {
+    const url = `https://yottavolt.github.io/web_nfc_demo/?temp=${encodeURIComponent(temp)}`;
+    const ndef = new NDEFReader();
+    await ndef.write({ records: [{ recordType: "url", data: url }] });
+
+    updateBtn.textContent = 'URL written to NFC!';
+    setTimeout(() => updateBtn.textContent = 'Update', 2000);
+  } catch (error) {
+    console.error('❌ NFC write failed:', error);
+    alert('NFC write failed. Make sure your device supports Web NFC and you are using a secure context.');
+  }
+}
+
+
+function init() {
+  arcLength = arcPathEl.getTotalLength();
+  progressEl.setAttribute('stroke-dasharray', `${arcLength}`);
+  progressEl.setAttribute('stroke-dashoffset', `${arcLength}`);
+
+  const urlTemp = getTempFromURL();
+  setTemperature(Number.isFinite(urlTemp) ? urlTemp : null);
+
+  updateBtn.addEventListener('click', async () => {
+    const v = parseFloat(tempInputEl.value);
+    if (!Number.isNaN(v)) {
+      await writeToNFC(v); // Only writes to NFC, no display update
     }
+  });
 
-    function init() {
-      arcLength = arcPathEl.getTotalLength();
-      progressEl.setAttribute('stroke-dasharray', `${arcLength}`);
-      progressEl.setAttribute('stroke-dashoffset', `${arcLength}`);
+  // Remove Enter key listener for display update
+}
 
-      const urlTemp = getTempFromURL();
-      setTemperature(urlTemp !== null ? urlTemp : 23);
-
-      updateBtn.addEventListener('click', async () => {
-        const v = parseFloat(tempInputEl.value);
-        if (!Number.isNaN(v)) {
-          setTemperature(v);
-          await writeToNFC(v);
-        }
-      });
-
-      tempInputEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const v = parseFloat(tempInputEl.value);
-          if (!Number.isNaN(v)) {
-            setTemperature(v);
-            writeToNFC(v);
-          }
-        }
-      });
-    }
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
