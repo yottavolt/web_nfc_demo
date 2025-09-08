@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Temperature Display</title>
+  <title>Temperature Dashboard</title>
   <style>
     :root {
       --bg-dark: #121212;
@@ -13,61 +13,55 @@
     }
 
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      font-family: system-ui, sans-serif;
       margin: 0;
       background: var(--bg-dark);
+      color: var(--text-light);
     }
 
-    .temp-box {
-      background: var(--box-dark);
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    nav {
+      background: #1f1f1f;
+      padding: 1rem;
       text-align: center;
-      width: 92%;
-      max-width: 420px;
+    }
+
+    nav button {
+      background: #333;
+      color: var(--text-light);
+      border: none;
+      padding: 0.6rem 1rem;
+      margin: 0 0.5rem;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .section {
+      display: none;
+      padding: 2rem;
+      max-width: 960px;
+      margin: auto;
+    }
+
+    .active {
+      display: block;
+    }
+
+    .gauges-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      justify-items: center;
     }
 
     .gauge-label {
-      color: var(--text-light);
-      font-size: 1.2rem;
-      font-weight: 600;
+      text-align: center;
       margin-bottom: 0.5rem;
-    }
-
-    .controls {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: center;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-    }
-
-    input[type="number"], button {
       font-size: 1rem;
-      padding: 0.6rem 0.9rem;
-      border-radius: 8px;
-      border: 1px solid #444;
-      background: #2a2a2a;
-      color: var(--text-light);
+      font-weight: 600;
     }
-
-    button {
-      cursor: pointer;
-      background: #444;
-      color: var(--text-light);
-      border: none;
-      transition: background 200ms ease;
-    }
-    button:hover { background: #666; }
 
     svg.circle-bar {
       display: block;
-      margin: 1rem auto;
     }
 
     .track, .progress {
@@ -81,162 +75,171 @@
     }
 
     .progress {
-      stroke: hsl(33, 100%, 50%);
       stroke-width: 15;
-      transition: stroke-dashoffset 450ms ease, stroke 300ms ease;
     }
 
-    text#tempValue {
+    text.tempValue {
       font-size: 36px;
       font-weight: bold;
       text-anchor: middle;
       dominant-baseline: middle;
-      transition: fill 300ms ease;
     }
 
-    .range-bar {
-      margin-top: 0.5rem;
-      margin-bottom: 1rem;
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
     }
 
-    .range-track {
+    .form-group {
       display: flex;
-      justify-content: space-between;
-      position: relative;
-      padding: 0 0.5rem;
+      flex-direction: column;
     }
 
-    .range-label {
-      color: var(--text-light);
-      font-size: 0.85rem;
-      flex: 1;
-      text-align: center;
-      opacity: 0.7;
+    label {
+      margin-bottom: 0.5rem;
+      font-weight: 600;
     }
 
-    .range-label.left { text-align: left; }
-    .range-label.center { text-align: center; }
-    .range-label.mid { text-align: center; }
-    .range-label.right { text-align: right; }
+    input {
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #1e1e1e;
+      color: #e0e0e0;
+    }
+
+    button#writeBtn {
+      margin-top: 2rem;
+      padding: 0.8rem 1.2rem;
+      font-size: 1rem;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button#writeBtn:hover {
+      background: #666;
+    }
   </style>
 </head>
 <body>
-  <div class="temp-box">
-    <div class="gauge-label">Room Temperature</div>
+  <nav>
+    <button onclick="showSection('home')">Home</button>
+    <button onclick="showSection('config')">Config</button>
+  </nav>
 
-    <svg class="circle-bar" width="240" height="240" viewBox="0 0 200 200">
-      <path
-        id="arcPath"
-        class="track"
-        d="M 43.431,156.569 A 80 80 0 1 1 156.569,156.569"
-      />
-      <path
-        id="progressArc"
-        class="progress"
-        d="M 43.431,156.569 A 80 80 0 1 1 156.569,156.569"
-        stroke-dasharray="0 1"
-        stroke-dashoffset="0"
-      />
-      <text id="tempValue" x="100" y="100" fill="hsl(33, 100%, 50%)">23°C</text>
-    </svg>
+  <div id="home" class="section active">
+    <h2>Room Temperatures</h2>
+    <div class="gauges-grid" id="gaugesContainer"></div>
+  </div>
 
-
-
-    <div class="controls">
-      <input type="number" id="tempInput" step="1" placeholder="Enter temperature (°C)" />
-      <button id="updateBtn">Update</button>
+  <div id="config" class="section">
+    <h2>Configure Temperatures & Write to NFC</h2>
+    <div class="form-grid" id="formContainer"></div>
+    <div style="text-align:center">
+      <button id="writeBtn">Write to NFC</button>
     </div>
   </div>
 
   <script>
-    const MIN = -20;
-    const MAX = 50;
-    const MID = 15;
+    const MIN = -20, MAX = 50, MID = 15;
+    const labels = ['Living Room', 'Kitchen', 'Bedroom', 'Office', 'Garage', 'Basement'];
 
-    const tempText = document.getElementById('tempValue');
-    const tempInputEl = document.getElementById('tempInput');
-    const progressEl = document.getElementById('progressArc');
-    const arcPathEl = document.getElementById('arcPath');
-    const updateBtn = document.getElementById('updateBtn');
-
-    let arcLength = 0;
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
 
     function colorForTemp(t) {
-      const p = Math.max(0, Math.min(1, (t - MIN) / (MAX - MIN)));
-      let hue;
-      if (t <= MID) {
-        const subP = (t - MIN) / (MID - MIN);
-        hue = 210 + (50 - 210) * subP;
-      } else {
-        const subP = (t - MID) / (MAX - MID);
-        hue = 50 + (33 - 50) * subP;
-      }
+      if (!Number.isFinite(t)) return '#888';
+      const p = (t - MIN) / (MAX - MIN);
+      const hue = t <= MID
+        ? 210 + (50 - 210) * ((t - MIN) / (MID - MIN))
+        : 50 + (33 - 50) * ((t - MID) / (MAX - MID));
       return `hsl(${hue}, 100%, 50%)`;
     }
 
-  function setTemperature(t) {
-    if (!Number.isFinite(t)) {
-      progressEl.style.strokeDashoffset = arcLength.toString();
-      progressEl.style.stroke = '#555';
-      tempText.textContent = '--';
-      tempText.setAttribute('fill', '#888');
-      return;
-    }
-
-    const clamped = Math.max(MIN, Math.min(MAX, t));
-    const p = (clamped - MIN) / (MAX - MIN);
-    const offset = arcLength * (1 - p);
-    const color = colorForTemp(clamped);
-
-    progressEl.style.strokeDashoffset = offset.toString();
-    progressEl.style.stroke = color;
-    tempText.textContent = `${clamped}°C`;
-    tempText.setAttribute('fill', color);
-  }
-
-
-    function getTempFromURL() {
+    function getTempsFromURL() {
       const params = new URLSearchParams(window.location.search);
-      const tempParam = params.get('temp');
-      const temp = parseFloat(tempParam);
-      return Number.isFinite(temp) ? temp : null;
+      return Array.from({ length: 6 }, (_, i) => {
+        const temp = parseFloat(params.get(`temp${i + 1}`));
+        return Number.isFinite(temp) ? temp : null;
+      });
     }
 
-async function writeToNFC(temp) {
-  try {
-    const url = `https://yottavolt.github.io/web_nfc_demo/?temp=${encodeURIComponent(temp)}`;
-    const ndef = new NDEFReader();
-    await ndef.write({ records: [{ recordType: "url", data: url }] });
+    function createGauge(temp, label) {
+      const arcPath = "M 43.431,156.569 A 80 80 0 1 1 156.569,156.569";
+      const dummy = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      dummy.setAttribute("d", arcPath);
+      const arcLength = dummy.getTotalLength();
+      const offset = Number.isFinite(temp) ? arcLength * (1 - (temp - MIN) / (MAX - MIN)) : arcLength;
+      const color = colorForTemp(temp);
+      const tempVal = Number.isFinite(temp) ? `${temp}°C` : '--';
 
-    updateBtn.textContent = 'URL written to NFC!';
-    setTimeout(() => updateBtn.textContent = 'Update', 2000);
-  } catch (error) {
-    console.error('❌ NFC write failed:', error);
-    alert('NFC write failed. Make sure your device supports Web NFC and you are using a secure context.');
-  }
-}
-
-
-function init() {
-  arcLength = arcPathEl.getTotalLength();
-  progressEl.setAttribute('stroke-dasharray', `${arcLength}`);
-  progressEl.setAttribute('stroke-dashoffset', `${arcLength}`);
-
-  const urlTemp = getTempFromURL();
-  setTemperature(Number.isFinite(urlTemp) ? urlTemp : null);
-
-  updateBtn.addEventListener('click', async () => {
-    const v = parseFloat(tempInputEl.value);
-    if (!Number.isNaN(v)) {
-      await writeToNFC(v); // Only writes to NFC, no display update
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = `
+        <div class="gauge-label">${label}</div>
+        <svg class="circle-bar" width="240" height="240" viewBox="0 0 200 200">
+          <path class="track" d="${arcPath}" stroke-width="15" />
+          <path class="progress" d="${arcPath}" stroke="${color}" stroke-width="15"
+            stroke-dasharray="${arcLength}" stroke-dashoffset="${offset}" />
+          <text class="tempValue" x="100" y="100" fill="${color}">${tempVal}</text>
+        </svg>
+      `;
+      return wrapper;
     }
-  });
 
-  // Remove Enter key listener for display update
-}
+    function initHome() {
+      const container = document.getElementById('gaugesContainer');
+      const temps = getTempsFromURL();
+      container.innerHTML = '';
+      temps.forEach((temp, i) => {
+        container.appendChild(createGauge(temp, labels[i]));
+      });
+    }
 
+    function initConfig() {
+      const container = document.getElementById('formContainer');
+      container.innerHTML = '';
+      labels.forEach((label, i) => {
+        const group = document.createElement('div');
+        group.className = 'form-group';
+        group.innerHTML = `
+          <label for="temp${i}">${label}</label>
+          <input type="number" id="temp${i}" placeholder="Enter °C" />
+        `;
+        container.appendChild(group);
+      });
+    }
 
-    document.addEventListener('DOMContentLoaded', init);
+    async function writeToNFC() {
+      try {
+        const temps = labels.map((_, i) => {
+          const val = parseFloat(document.getElementById(`temp${i}`).value);
+          return Number.isFinite(val) ? val : '';
+        });
+
+        const url = `https://yottavolt.github.io/web_nfc_demo/?${temps.map((t, i) => `temp${i + 1}=${encodeURIComponent(t)}`).join('&')}`;
+        const ndef = new NDEFReader();
+        await ndef.write({ records: [{ recordType: "url", data: url }] });
+
+        const btn = document.getElementById('writeBtn');
+        btn.textContent = '✅ NFC Tag Written!';
+        setTimeout(() => btn.textContent = 'Write to NFC', 2000);
+      } catch (err) {
+        alert('NFC write failed. Make sure your device supports Web NFC and you are using HTTPS.');
+        console.error(err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initHome();
+      initConfig();
+      document.getElementById('writeBtn').addEventListener('click', writeToNFC);
+    });
   </script>
 </body>
 </html>
