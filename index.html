@@ -15,6 +15,7 @@
       margin: 0;
       background: #f0f0f0;
     }
+
     .temp-box {
       background: white;
       padding: 2em;
@@ -24,22 +25,35 @@
       width: 90%;
       max-width: 400px;
     }
+
     .temp-value {
-      font-size: 3em;
+      font-size: 2.5em;
       color: #ff5722;
-      margin-bottom: 1em;
+      margin: 1em 0;
     }
-    .bar-container {
-      width: 100%;
-      background: #ddd;
-      border-radius: 20px;
-      overflow: hidden;
-      height: 20px;
+
+    svg.circle-bar {
+      margin: 1em 0;
     }
-    .bar-fill {
-      height: 100%;
-      background: linear-gradient(to right, #00f, #0ff, #0f0, #ff0, #f00);
-      transition: width 0.3s ease;
+
+    input, button {
+      margin: 0.5em;
+      padding: 0.5em 1em;
+      font-size: 1em;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #121212;
+        color: #fff;
+      }
+      .temp-box {
+        background: #1e1e1e;
+        box-shadow: 0 0 10px rgba(255,255,255,0.1);
+      }
+      .temp-value {
+        color: #ffab91;
+      }
     }
   </style>
 </head>
@@ -47,9 +61,24 @@
   <div class="temp-box">
     <div>Current Temperature:</div>
     <div class="temp-value" id="temp">--</div>
-    <div class="bar-container">
-      <div class="bar-fill" id="bar" style="width: 0%;"></div>
-    </div>
+    <svg width="150" height="150" class="circle-bar">
+      <circle cx="75" cy="75" r="60" stroke="#ddd" stroke-width="15" fill="none" />
+      <circle id="progressCircle" cx="75" cy="75" r="60"
+        stroke="url(#tempGradient)" stroke-width="15" fill="none"
+        stroke-dasharray="377" stroke-dashoffset="377"
+        transform="rotate(-90 75 75)" />
+      <defs>
+        <linearGradient id="tempGradient">
+          <stop offset="0%" stop-color="#00f" />
+          <stop offset="25%" stop-color="#0ff" />
+          <stop offset="50%" stop-color="#0f0" />
+          <stop offset="75%" stop-color="#ff0" />
+          <stop offset="100%" stop-color="#f00" />
+        </linearGradient>
+      </defs>
+    </svg>
+    <input type="number" id="manualTemp" placeholder="Enter temperature (°C)" step="0.1" />
+    <button onclick="writeManualTemp()">Write to NFC Tag</button>
   </div>
 
   <script>
@@ -66,16 +95,50 @@
       return ((clamped - min) / (max - min)) * 100;
     }
 
+    function updateCircularBar(temp) {
+      const circle = document.getElementById("progressCircle");
+      const percent = mapTempToPercent(temp);
+      const offset = 377 - (377 * percent) / 100;
+      circle.style.strokeDashoffset = offset;
+    }
+
+    async function writeManualTemp() {
+      const input = document.getElementById("manualTemp");
+      const temp = parseFloat(input.value);
+      if (isNaN(temp)) {
+        alert("Please enter a valid temperature.");
+        return;
+      }
+
+      if ("NDEFWriter" in window) {
+        try {
+          const ndef = new NDEFWriter();
+          await ndef.write({
+            records: [
+              {
+                recordType: "text",
+                data: `Temperature: ${temp.toFixed(1)}°C`
+              }
+            ]
+          });
+          alert("Temperature written to NFC tag!");
+        } catch (error) {
+          console.error("NFC write failed:", error);
+          alert("Failed to write to NFC tag.");
+        }
+      } else {
+        alert("Web NFC is not supported on this device.");
+      }
+    }
+
     const tempValue = getTempFromURL();
     const tempDisplay = document.getElementById("temp");
-    const barFill = document.getElementById("bar");
 
     if (tempValue !== null && !isNaN(tempValue)) {
       tempDisplay.textContent = `${tempValue.toFixed(1)}°C`;
-      barFill.style.width = `${mapTempToPercent(tempValue)}%`;
+      updateCircularBar(tempValue);
     } else {
       tempDisplay.textContent = "N/A";
-      barFill.style.width = "0%";
     }
   </script>
 </body>
