@@ -86,7 +86,7 @@
     /* Gauges layout */
     .gauges-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
       gap: 1rem;
       justify-items: center;
     }
@@ -173,30 +173,39 @@
 
   <!-- Pages -->
   <div id="home" class="section active">
-    <h2>Room Temperatures</h2>
     <div class="gauges-grid" id="gaugesContainer"></div>
   </div>
 
   <div id="config" class="section">
-    <h2>Configure Temperatures & Write to NFC</h2>
-    <div class="form-grid" id="formContainer"></div>
+    <div class="form-grid" id="formContainer" style="margin-top: 4rem;"></div>
     <div style="text-align:center">
       <button id="writeBtn">Write to NFC</button>
     </div>
   </div>
 
-  <div id="color" class="section">
-    <h2>Color Picker</h2>
-    <div style="text-align:center">
-      <input type="color" id="colorInput" value="#00aaff" />
-      <br><br>
-      <button id="colorOkBtn">OK</button>
-    </div>
+  <div id="color" class="section" style="margin-top: 4rem;">
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+    <input type="color" id="colorInput" value="#00aaff" />
+    <div id="colorPreview" style="width:40px; height:40px; border-radius:6px;"></div>
+    <button id="colorOkBtn">OK</button>
+  </div>    
   </div>
 
   <script>
     const MIN = -20, MAX = 50, MID = 15;
     const labels = ['Living Room', 'Kitchen', 'Bedroom', 'Office', 'Garage', 'Basement'];
+
+    //update color picker
+    const colorInput = document.getElementById('colorInput');
+    const colorPreview = document.getElementById('colorPreview');
+
+    function updatePreview() {
+      colorPreview.style.backgroundColor = colorInput.value;
+    }
+
+colorInput.addEventListener('input', updatePreview);
+updatePreview(); // initialize on load
+
 
     // Sidebar toggle
     document.getElementById('menu-toggle').addEventListener('click', () => {
@@ -238,7 +247,7 @@
       const wrapper = document.createElement("div");
       wrapper.innerHTML = `
         <div class="gauge-label">${label}</div>
-        <svg class="circle-bar" width="240" height="240" viewBox="0 0 200 200">
+        <svg class="circle-bar" viewBox="0 0 200 200" style="width: 100%; max-width: 200px; height: auto;">
           <path class="track" d="${arcPath}" stroke-width="15" />
           <path class="progress" d="${arcPath}" stroke="${color}" stroke-width="15"
             stroke-dasharray="${arcLength}" stroke-dashoffset="${offset}" />
