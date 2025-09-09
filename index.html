@@ -19,22 +19,61 @@
       color: var(--text-light);
     }
 
-    nav {
-      background: #1f1f1f;
-      padding: 1rem;
-      text-align: center;
+    /* Hamburger */
+    .hamburger {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      font-size: 2rem;
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      z-index: 1001;
     }
 
-    nav button {
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: 0; /* Always anchored to the left edge */
+  width: 240px;
+  height: 100%;
+  background: var(--box-dark);
+  padding: 5rem 1rem 2rem 1rem;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.35);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform: translateX(-240px); /* Slide out by its own width */
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+#sidebar.open {
+  transform: translateX(0); /* Slide in fully */
+  opacity: 1;
+  pointer-events: auto;
+}
+
+    #sidebar.open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+    }
+
+    #sidebar button {
+      display: block;
+      width: 100%;
+      text-align: left;
       background: #333;
       color: var(--text-light);
       border: none;
       padding: 0.6rem 1rem;
-      margin: 0 0.5rem;
+      margin-bottom: 1rem;
       cursor: pointer;
       border-radius: 6px;
     }
 
+    /* Main sections */
     .section {
       display: none;
       padding: 2rem;
@@ -42,15 +81,21 @@
       margin: auto;
     }
 
-    .active {
-      display: block;
-    }
+    .active { display: block; }
 
+    /* Gauges layout */
     .gauges-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 1rem;
       justify-items: center;
+    }
+
+    /* Ensure at least 2 gauges on small screens */
+    @media (max-width: 600px) {
+      .gauges-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     .gauge-label {
@@ -60,23 +105,15 @@
       font-weight: 600;
     }
 
-    svg.circle-bar {
-      display: block;
-    }
+    svg.circle-bar { display: block; }
 
     .track, .progress {
       fill: none;
       stroke-linecap: round;
     }
 
-    .track {
-      stroke: var(--track);
-      stroke-width: 15;
-    }
-
-    .progress {
-      stroke-width: 15;
-    }
+    .track { stroke: var(--track); stroke-width: 15; }
+    .progress { stroke-width: 15; }
 
     text.tempValue {
       font-size: 36px;
@@ -101,7 +138,7 @@
       font-weight: 600;
     }
 
-    input {
+    input, button, select {
       padding: 0.6rem;
       border-radius: 6px;
       border: 1px solid #444;
@@ -120,17 +157,21 @@
       cursor: pointer;
     }
 
-    button#writeBtn:hover {
-      background: #666;
-    }
+    button#writeBtn:hover { background: #666; }
   </style>
 </head>
 <body>
-  <nav>
+  <!-- Hamburger -->
+  <button id="menu-toggle" class="hamburger" aria-label="Open menu">&#9776;</button>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" aria-label="Sidebar navigation">
     <button onclick="showSection('home')">Home</button>
     <button onclick="showSection('config')">Config</button>
-  </nav>
+    <button onclick="showSection('color')">Color Picker</button>
+  </aside>
 
+  <!-- Pages -->
   <div id="home" class="section active">
     <h2>Room Temperatures</h2>
     <div class="gauges-grid" id="gaugesContainer"></div>
@@ -144,18 +185,33 @@
     </div>
   </div>
 
+  <div id="color" class="section">
+    <h2>Color Picker</h2>
+    <div style="text-align:center">
+      <input type="color" id="colorInput" value="#00aaff" />
+      <br><br>
+      <button id="colorOkBtn">OK</button>
+    </div>
+  </div>
+
   <script>
     const MIN = -20, MAX = 50, MID = 15;
     const labels = ['Living Room', 'Kitchen', 'Bedroom', 'Office', 'Garage', 'Basement'];
 
+    // Sidebar toggle
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+
+    // Page switching
     function showSection(id) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
+      document.getElementById('sidebar').classList.remove('open');
     }
 
     function colorForTemp(t) {
       if (!Number.isFinite(t)) return '#888';
-      const p = (t - MIN) / (MAX - MIN);
       const hue = t <= MID
         ? 210 + (50 - 210) * ((t - MIN) / (MID - MIN))
         : 50 + (33 - 50) * ((t - MID) / (MAX - MID));
@@ -222,7 +278,15 @@
           return Number.isFinite(val) ? val : '';
         });
 
-        const url = `https://yottavolt.github.io/web_nfc_demo/?${temps.map((t, i) => `temp${i + 1}=${encodeURIComponent(t)}`).join('&')}`;
+        const url = `https://yottavolt.github.io/web_nfc_demo/?${
+          temps.map((t, i) => `temp${i + 1}=${encodeURIComponent(t)}`).join('&')
+        }`;
+
+        if (!('NDEFReader' in window)) {
+          alert('Web NFC unsupported. Use a compatible device and HTTPS.');
+          return;
+        }
+
         const ndef = new NDEFReader();
         await ndef.write({ records: [{ recordType: "url", data: url }] });
 
