@@ -173,13 +173,13 @@
 
   <!-- Pages -->
   <div id="home" class="section active">
-    <div class="gauges-grid" id="gaugesContainer"></div>
+    <div class="gauges-grid" id="gaugesContainer" style="margin-top: 4rem" ></div>
   </div>
 
   <div id="config" class="section">
     <div class="form-grid" id="formContainer" style="margin-top: 4rem;"></div>
     <div style="text-align:center">
-      <button id="writeBtn">Write to NFC</button>
+      <button id="writeBtn">Save via NFC</button>
     </div>
   </div>
 
@@ -187,7 +187,7 @@
     <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
     <input type="color" id="colorInput" value="#00aaff" />
     <div id="colorPreview" style="width:40px; height:40px; border-radius:6px;"></div>
-    <button id="colorOkBtn">OK</button>
+    <button id="colorOkBtn">Save via NFC</button>
   </div>    
   </div>
 
@@ -300,7 +300,7 @@ updatePreview(); // initialize on load
         await ndef.write({ records: [{ recordType: "url", data: url }] });
 
         const btn = document.getElementById('writeBtn');
-        btn.textContent = '✅ NFC Tag Written!';
+        btn.textContent = '✅ Config write Sucess';
         setTimeout(() => btn.textContent = 'Write to NFC', 2000);
       } catch (err) {
         alert('NFC write failed. Make sure your device supports Web NFC and you are using HTTPS.');
