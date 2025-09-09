@@ -313,6 +313,23 @@ updatePreview(); // initialize on load
       initConfig();
       document.getElementById('writeBtn').addEventListener('click', writeToNFC);
     });
+
+    //handle offline caching
+    const currentUrl = window.location.href;
+    const cached = localStorage.getItem(currentUrl);
+
+  if (cached) {
+    const config = JSON.parse(cached);
+    // Apply color
+    document.getElementById('colorInput').value = config.color;
+    document.getElementById('colorPreview').style.backgroundColor = config.color;
+
+      // Apply temperatures
+      updateTemperatureUI(config.temperatures);
+    } else {
+      console.warn("No cached data for this URL");
+    }
+
   </script>
 </body>
 </html>
