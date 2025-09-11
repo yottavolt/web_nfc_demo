@@ -1,0 +1,129 @@
+
+    const MIN = -20, MAX = 50, MID = 15;
+    const labels = ['Living Room', 'Kitchen', 'Bedroom', 'Office', 'Garage', 'Basement'];
+
+    //update color picker
+    const colorInput = document.getElementById('colorInput');
+    const colorPreview = document.getElementById('colorPreview');
+
+    function updatePreview() {
+      colorPreview.style.backgroundColor = colorInput.value;
+    }
+
+colorInput.addEventListener('input', updatePreview);
+updatePreview(); // initialize on load
+
+
+    // Sidebar toggle
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+
+    // Page switching
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.getElementById('sidebar').classList.remove('open');
+    }
+
+    function colorForTemp(t) {
+      if (!Number.isFinite(t)) return '#888';
+      const hue = t <= MID
+        ? 210 + (50 - 210) * ((t - MIN) / (MID - MIN))
+        : 50 + (33 - 50) * ((t - MID) / (MAX - MID));
+      return `hsl(${hue}, 100%, 50%)`;
+    }
+
+    function getTempsFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return Array.from({ length: 6 }, (_, i) => {
+        const temp = parseFloat(params.get(`temp${i + 1}`));
+        return Number.isFinite(temp) ? temp : null;
+      });
+    }
+
+    function createGauge(temp, label) {
+      const arcPath = "M 43.431,156.569 A 80 80 0 1 1 156.569,156.569";
+      const dummy = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      dummy.setAttribute("d", arcPath);
+      const arcLength = dummy.getTotalLength();
+      const offset = Number.isFinite(temp) ? arcLength * (1 - (temp - MIN) / (MAX - MIN)) : arcLength;
+      const color = colorForTemp(temp);
+      const tempVal = Number.isFinite(temp) ? `${temp}°C` : '--';
+
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = `
+        <div class="gauge-label">${label}</div>
+        <svg class="circle-bar" viewBox="0 0 200 200" style="width: 100%; max-width: 200px; height: auto;">
+          <path class="track" d="${arcPath}" stroke-width="15" />
+          <path class="progress" d="${arcPath}" stroke="${color}" stroke-width="15"
+            stroke-dasharray="${arcLength}" stroke-dashoffset="${offset}" />
+          <text class="tempValue" x="100" y="100" fill="${color}">${tempVal}</text>
+        </svg>
+      `;
+      return wrapper;
+    }
+
+    function initHome() {
+      const container = document.getElementById('gaugesContainer');
+      const temps = getTempsFromURL();
+      container.innerHTML = '';
+      temps.forEach((temp, i) => {
+        container.appendChild(createGauge(temp, labels[i]));
+      });
+    }
+
+    function initConfig() {
+      const container = document.getElementById('formContainer');
+      container.innerHTML = '';
+      labels.forEach((label, i) => {
+        const group = document.createElement('div');
+        group.className = 'form-group';
+        group.innerHTML = `
+          <label for="temp${i}">${label}</label>
+          <input type="number" id="temp${i}" placeholder="Enter °C" />
+        `;
+        container.appendChild(group);
+      });
+    }
+
+    async function writeToNFC() {
+      try {
+        const temps = labels.map((_, i) => {
+          const val = parseFloat(document.getElementById(`temp${i}`).value);
+          return Number.isFinite(val) ? val : '';
+        });
+
+        const url = `https://yottavolt.github.io/web_nfc_demo/?${
+          temps.map((t, i) => `temp${i + 1}=${encodeURIComponent(t)}`).join('&')
+        }`;
+
+        if (!('NDEFReader' in window)) {
+          alert('Web NFC unsupported. Use a compatible device and HTTPS.');
+          return;
+        }
+
+        const ndef = new NDEFReader();
+        await ndef.write({ records: [{ recordType: "url", data: url }] });
+
+        const btn = document.getElementById('writeBtn');
+        btn.textContent = '✅ Config write Sucess';
+        setTimeout(() => btn.textContent = 'Write to NFC', 2000);
+      } catch (err) {
+        alert('NFC write failed. Make sure your device supports Web NFC and you are using HTTPS.');
+        console.error(err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initHome();
+      initConfig();
+      document.getElementById('writeBtn').addEventListener('click', writeToNFC);
+    });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(() => console.log('Service Worker registered'))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  }
+
