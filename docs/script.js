@@ -135,7 +135,7 @@ async function writeToNFC() {
     console.error(err);
   }
 }
-
+ 
 
     document.addEventListener('DOMContentLoaded', () => {
       initHome();
@@ -148,4 +148,5 @@ async function writeToNFC() {
       .then(() => console.log('Service Worker registered'))
       .catch(err => console.error('Service Worker registration failed:', err));
   }
+
 
