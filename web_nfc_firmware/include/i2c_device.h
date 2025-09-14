@@ -33,4 +33,31 @@ void initi2c(){
 
 }
 
+void waitloop(){
+    for(int i=0; i<10; i++){
+        SerialUSB.println("Waiting...");
+        delay(1000);
+    }
+}
+
+void initnfcdevice(ST25DV &nfcdevice){
+  if(nfcdevice.begin() == 0) {
+    SerialUSB.println("ST25 connection sucess");
+  } else {
+    SerialUSB.println("Fault");
+    while(1);
+  }
+}
+
+void writeURI(String ndef, ST25DV &nfcdevice){
+  const char* uri_write_message = ndef.c_str();
+  const char uri_write_protocol[] = URI_ID_0x04_STRING; // Uri protocol to write in the tag
+  String uri_write = String(uri_write_protocol) + String(uri_write_message);
+
+  if(nfcdevice.writeURI(uri_write_protocol, uri_write_message, "")) {
+    SerialUSB.println("Write failed!");
+    while(1);
+  }
+}
+
 #endif // I2C_DEVICE
