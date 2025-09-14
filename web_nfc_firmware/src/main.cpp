@@ -15,9 +15,10 @@ void setup() {
 
   // Initialize serial for output.
    SerialUSB.begin();
-  while (!SerialUSB) {
-    ; // Wait for USB Serial to connect
-  }
+
+   //waiting for serial usb to conenct causes wait until com port open so a no no
+   delay(1500);
+
   SerialUSB.println("SerialUSB working!");
 
   initi2c();
