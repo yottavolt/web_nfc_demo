@@ -87,33 +87,55 @@ updatePreview(); // initialize on load
       });
     }
 
-    async function writeToNFC() {
-      try {
-        const temps = labels.map((_, i) => {
-          const val = parseFloat(document.getElementById(`temp${i}`).value);
-          return Number.isFinite(val) ? val : '';
-        });
+async function writeToNFC() {
+  try {
+    const header = '<TEMP>';
+    let payload = '';
 
-        const url = `https://yottavolt.github.io/web_nfc_demo/?${
-          temps.map((t, i) => `temp${i + 1}=${encodeURIComponent(t)}`).join('&')
-        }`;
+    // Read 8 temperature values and encode as fixed-point 8-bit hex
+    for (let i = 0; i < 8; i++) {
+      const val = parseFloat(document.getElementById(`temp${i}`).value);
 
-        if (!('NDEFReader' in window)) {
-          alert('Web NFC unsupported. Use a compatible device and HTTPS.');
-          return;
-        }
-
-        const ndef = new NDEFReader();
-        await ndef.write({ records: [{ recordType: "url", data: url }] });
-
-        const btn = document.getElementById('writeBtn');
-        btn.textContent = '✅ Config write Sucess';
-        setTimeout(() => btn.textContent = 'Write to NFC', 2000);
-      } catch (err) {
-        alert('NFC write failed. Make sure your device supports Web NFC and you are using HTTPS.');
-        console.error(err);
+      let mapped;
+      if (Number.isFinite(val)) {
+        // Clamp temp between -20 and 50
+        const clamped = Math.max(-20, Math.min(50, val));
+        mapped = Math.round((clamped + 20) * 255 / 70);
+      } else {
+        // Use 0x80 (128) as a placeholder for invalid/missing temps
+        mapped = 0x80;
       }
+
+      // Convert to 2-digit hex
+      payload += mapped.toString(16).padStart(2, '0').toUpperCase();
     }
+
+    const fullText = header + payload;
+
+    if (!('NDEFReader' in window)) {
+      alert('Web NFC unsupported. Use a compatible device and HTTPS.');
+      return;
+    }
+
+    const ndef = new NDEFReader();
+    await ndef.write({
+      records: [
+        {
+          recordType: "text",
+          data: fullText
+        }
+      ]
+    });
+
+    const btn = document.getElementById('writeBtn');
+    btn.textContent = '✅ Config write Success';
+    setTimeout(() => btn.textContent = 'Write to NFC', 2000);
+  } catch (err) {
+    alert('NFC write failed. Make sure your device supports Web NFC and you are using HTTPS.');
+    console.error(err);
+  }
+}
+
 
     document.addEventListener('DOMContentLoaded', () => {
       initHome();
