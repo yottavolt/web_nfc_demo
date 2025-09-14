@@ -92,7 +92,7 @@ async function writeToNFC() {
     const header = '<TEMP>';
     let payload = '';
 
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       const input = document.getElementById(`temp${i}`);
       let mapped = 0; // Default to 0x00 for missing/invalid input
 
