@@ -14,7 +14,7 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 void initTag(){
   Serial.println("Tag init");
-  writeURI("yottavolt.github.io/web_nfc_demo/?temp1=-18&temp2=-12&temp3=5&temp4=20&temp5=32&temp6=39", st25dv);
+  writeURI("yottavolt.github.io/web_nfc_demo/?temp1=-18&temp2=39&temp3=5&temp4=20&temp5=32&temp6=39", st25dv);
 }
 
 void setup() {
