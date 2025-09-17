@@ -2,9 +2,14 @@
 #include "ST25DVSensor.h"
 #include <Wire.h>
 #include "i2c_device.h"
+#include <Adafruit_NeoPixel.h>
 
 #define DEV_I2C Wire
 ST25DV st25dv(-1, -1, &DEV_I2C);
+
+#define LED_PIN    PB10
+#define LED_COUNT  1
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 void initTag(){
   Serial.println("Tag init");
@@ -25,6 +30,12 @@ void setup() {
   i2cScan();
   initnfcdevice(st25dv);
   initTag();
+
+   strip.begin();
+   strip.show();
+
+   strip.setPixelColor(0, strip.Color(10, 10, 0)); // Red
+   strip.show();
 }
 
 

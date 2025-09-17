@@ -149,3 +149,33 @@ async function writeToNFC() {
   }
 
 
+  
+
+  document.getElementById('colorOkBtn').addEventListener('click', async () => {
+  const colorHex = document.getElementById('colorInput').value; // e.g. "#00FF00"
+  
+  // Convert hex to RGB
+  const r = parseInt(colorHex.slice(1, 3), 16);
+  const g = parseInt(colorHex.slice(3, 5), 16);
+  const b = parseInt(colorHex.slice(5, 7), 16);
+
+  const rgbBytes = new Uint8Array([r, g, b]);
+
+  try {
+    const ndef = new NDEFWriter();
+    await ndef.write({
+      records: [{
+        recordType: "mime",
+        mediaType: "application/octet-stream",
+        data: rgbBytes
+      }]
+    });
+    alert(`Color ${colorHex} written to NFC tag as RGB(${r}, ${g}, ${b})`);
+  } catch (error) {
+    console.error("NFC write failed:", error);
+    alert("Failed to write to NFC tag. Make sure your browser and device support Web NFC.");
+  }
+});
+
+
+
