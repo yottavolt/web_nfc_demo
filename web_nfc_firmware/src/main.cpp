@@ -38,6 +38,10 @@ void setup() {
    strip.show();
 }
 
+void parseString(){
+  
+}
+
 
 void loop() {  
 

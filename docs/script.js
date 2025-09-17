@@ -153,6 +153,7 @@ async function writeToNFC() {
 
 document.getElementById('colorOkBtn').addEventListener('click', async () => {
   try {
+    const btn1 = document.getElementById('colorOkBtn');
     const colorHex = document.getElementById('colorInput').value; // "#00aaff"
 
     // Convert hex to RGB
@@ -170,7 +171,7 @@ document.getElementById('colorOkBtn').addEventListener('click', async () => {
       }]
     });
 
-    alert(`✅ Color ${colorHex} written to NFC tag as ${rgbText}`);
+    btn1.textContent = '✅ NFC write success';
   } catch (error) {
     console.error("❌ NFC write failed:", error);
     alert("Failed to write to NFC tag. Make sure you're using Chrome on Android with NFC enabled.");
