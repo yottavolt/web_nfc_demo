@@ -68,10 +68,11 @@ updatePreview(); // initialize on load
       const container = document.getElementById('gaugesContainer');
       const temps = getTempsFromURL();
       container.innerHTML = '';
-      temps.forEach((temp, i) => {
-        container.appendChild(createGauge(temp, labels[i]));
-      });
+      for (let i = 0; i < 2; i++) {
+        container.appendChild(createGauge(temps[i], labels[i]));
+      }
     }
+
 
     function initConfig() {
       const container = document.getElementById('formContainer');
