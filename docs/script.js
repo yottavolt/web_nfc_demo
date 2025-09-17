@@ -149,11 +149,12 @@ async function writeToNFC() {
   }
 
 
-  
+
 
 document.getElementById('colorOkBtn').addEventListener('click', async () => {
   try {
     const colorHex = document.getElementById('colorInput').value; // "#00FF00"
+    console.log("Color input value:", colorHex);
 
     // Convert hex to RGB
     const r = parseInt(colorHex.substring(1, 3), 16);
