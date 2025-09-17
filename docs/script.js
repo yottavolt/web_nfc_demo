@@ -149,14 +149,18 @@ async function writeToNFC() {
   }
 
 
-
-
 document.getElementById('colorOkBtn').addEventListener('click', async () => {
-  try {
-    const btn1 = document.getElementById('colorOkBtn');
-    const colorHex = document.getElementById('colorInput').value; // "#00aaff"
+  const btn1 = document.getElementById('colorOkBtn');
+  const originalText = btn1.textContent;
 
-    // Convert hex to RGB
+  // Visual feedback: disable button and show loading state
+  btn1.disabled = true;
+  btn1.textContent = '⏳ Writing...';
+  btn1.style.opacity = '0.6';
+
+  try {
+    const colorHex = document.getElementById('colorInput').value;
+
     const r = parseInt(colorHex.substring(1, 3), 16);
     const g = parseInt(colorHex.substring(3, 5), 16);
     const b = parseInt(colorHex.substring(5, 7), 16);
@@ -175,8 +179,19 @@ document.getElementById('colorOkBtn').addEventListener('click', async () => {
   } catch (error) {
     console.error("❌ NFC write failed:", error);
     alert("Failed to write to NFC tag. Make sure you're using Chrome on Android with NFC enabled.");
+    btn1.textContent = '❌ Write failed';
   }
+
+  // Restore button after 3 seconds
+  setTimeout(() => {
+    btn1.textContent = originalText;
+    btn1.disabled = false;
+    btn1.style.opacity = '1';
+  }, 3000);
 });
+
+
+
 
 
 

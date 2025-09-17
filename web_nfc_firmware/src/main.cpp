@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include "i2c_device.h"
 #include <Adafruit_NeoPixel.h>
+#include <String.h>
 
 #define DEV_I2C Wire
 ST25DV st25dv(-1, -1, &DEV_I2C);
@@ -38,8 +39,24 @@ void setup() {
    strip.show();
 }
 
-void parseString(){
-  
+void parseString(String input){
+  SerialUSB.println(input);
+  if (input.startsWith("<COL>")) {
+  String r_data = input.substring(5, 7);
+  String g_data = input.substring(7, 9);
+  String b_data = input.substring(9, 11);
+
+  uint8_t value_r = strtoul(r_data.c_str(), nullptr, 16);
+  uint8_t value_g = strtoul(g_data.c_str(), nullptr, 16);
+  uint8_t value_b = strtoul(b_data.c_str(), nullptr, 16);
+
+  Serial.println(r_data);
+  Serial.println(g_data);
+  Serial.println(b_data);
+
+   strip.setPixelColor(0, strip.Color(value_r, value_g, value_b)); // Red
+   strip.show();
+  } 
 }
 
 
@@ -53,7 +70,8 @@ void loop() {
   }
   else{             
     SerialUSB.println("Updated data detected");     //do something with thew data and write url back to the tag
-    SerialUSB.println(uri_read.c_str());
+    
+    parseString(uri_read.c_str());
     initTag();
   }
 
