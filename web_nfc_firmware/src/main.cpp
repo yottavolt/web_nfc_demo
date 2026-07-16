@@ -3,7 +3,7 @@
 #include <Wire.h>
 #include "i2c_device.h"
 #include <Adafruit_NeoPixel.h>
-#include <String.h>
+#include <string.h>
 
 #define DEV_I2C Wire
 ST25DV st25dv(-1, -1, &DEV_I2C);
@@ -14,7 +14,7 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 void initTag(){
   Serial.println("Tag init");
-  writeURI("yottavolt.github.io/web_nfc_demo/?temp1=-18&temp2=39&temp3=5&temp4=20&temp5=32&temp6=39", st25dv);
+  writeURI("yottavolt.github.io/web_nfc_bartender/?active=Fhttps://yottavolt.github.io/web_nfc_bartender?active=FFF", st25dv);
 }
 
 void setup() {
@@ -41,21 +41,17 @@ void setup() {
 
 void parseString(String input){
   SerialUSB.println(input);
-  if (input.startsWith("<COL>")) {
-  String r_data = input.substring(5, 7);
-  String g_data = input.substring(7, 9);
-  String b_data = input.substring(9, 11);
+  if (input.startsWith("<01>")) {
 
-  uint8_t value_r = strtoul(r_data.c_str(), nullptr, 16);
-  uint8_t value_g = strtoul(g_data.c_str(), nullptr, 16);
-  uint8_t value_b = strtoul(b_data.c_str(), nullptr, 16);
+    for(int i=0; i<5 ; i++){
+      strip.setPixelColor(0, strip.Color(0, 50, 20)); // Red
+      strip.show();
+      delay(300);
+      strip.setPixelColor(0, strip.Color(0, 0, 0)); // Red
+      strip.show();
+      delay(100);
 
-  Serial.println(r_data);
-  Serial.println(g_data);
-  Serial.println(b_data);
-
-   strip.setPixelColor(0, strip.Color(value_r, value_g, value_b)); // Red
-   strip.show();
+    }
   } 
 }
 
