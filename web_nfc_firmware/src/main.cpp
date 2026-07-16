@@ -4,6 +4,7 @@
 #include "i2c_device.h"
 #include <Adafruit_NeoPixel.h>
 #include <string.h>
+#include "solenoid_driver.h"
 
 #define DEV_I2C Wire
 ST25DV st25dv(-1, -1, &DEV_I2C);
@@ -11,6 +12,7 @@ ST25DV st25dv(-1, -1, &DEV_I2C);
 #define LED_PIN    PB10
 #define LED_COUNT  1
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+SolenoidDriver solenoids;
 
 void initTag(){
   Serial.println("Tag init");
@@ -37,21 +39,14 @@ void setup() {
 
    strip.setPixelColor(0, strip.Color(10, 10, 0)); // Red
    strip.show();
+   solenoids.init();
 }
 
 void parseString(String input){
   SerialUSB.println(input);
   if (input.startsWith("<01>")) {
 
-    for(int i=0; i<5 ; i++){
-      strip.setPixelColor(0, strip.Color(0, 50, 20)); // Red
-      strip.show();
-      delay(300);
-      strip.setPixelColor(0, strip.Color(0, 0, 0)); // Red
-      strip.show();
-      delay(100);
-
-    }
+    solenoids.test();
   } 
 }
 
