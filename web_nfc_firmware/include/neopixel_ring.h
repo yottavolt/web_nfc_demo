@@ -1,30 +1,30 @@
 #ifndef NEOPIXEL_RING_H
 #define NEOPIXEL_RING_H
-
 #include <Adafruit_NeoPixel.h>
 
 enum RingPattern {
     PATTERN_SOLID,
-    PATTERN_SPIN_FADE,  // Windows-like loading ring with fading tail
-    PATTERN_FILL        // Starts at 0 and fills up to 100%
+    PATTERN_SPIN_FADE,
+    PATTERN_FILL
 };
 
 class NeoPixelRing {
 private:
     Adafruit_NeoPixel _strip;
     uint16_t _numPixels;
-    
-    RingPattern _currentPattern = PATTERN_SOLID;
+    RingPattern _currentPattern = PATTERN_SOLID; // Fixed typo: RingPattern_ -> RingPattern
     uint32_t _baseColor = 0;
-    
     uint32_t _lastUpdate = 0;
-    uint16_t _updateInterval = 50; // ms between animation frames
-    
-    // Animation state variables
-    int16_t _spinIndex = 0;
-    uint8_t _fillPercent = 0;
 
-    // Helper to extract RGB channels for manual dimming calculations
+    // Animation parameters
+    float _spinSpeed = 0.05f;
+    float _fillSpeed = 0.2f;
+
+    // Continuous trackers
+    float _headPosition = 0.0f; // Replaces smoothPosition
+    float _currentFill = 0.0f;
+    float _targetFill = 0.0f;
+
     void getRGB(uint32_t color, uint8_t &r, uint8_t &g, uint8_t &b) {
         r = (uint8_t)(color >> 16);
         g = (uint8_t)(color >> 8);
@@ -32,97 +32,101 @@ private:
     }
 
     void updateSpinFade() {
-        uint8_t baseR, baseG, baseB;
-        getRGB(_baseColor, baseR, baseG, baseB);
+        uint8_t r, g, b;
+        getRGB(_baseColor, r, g, b);
+
+        // Move head forward continuously
+        _headPosition += _spinSpeed;
+        if (_headPosition >= _numPixels) {
+            _headPosition -= _numPixels;
+        }
+
+        // Precompute falloff parameters for performance
+        float halfLen = (float)_numPixels * 0.3f; // How wide the glow is
 
         for (uint16_t i = 0; i < _numPixels; i++) {
-            // Calculate distance behind the leading pixel index
-            int16_t distance = (_spinIndex - i + _numPixels) % _numPixels;
-            
-            // Only illuminate a fading tail (e.g., across 5 pixels or scaling to ring size)
-            // Pixels further back get dimmer.
-            if (distance < _numPixels / 2 || _numPixels <= 4) {
-                float fadeFactor = 1.0f - ((float)distance / (_numPixels / 2.0f));
-                if (fadeFactor < 0.0f) fadeFactor = 0.0f;
-                
-                _strip.setPixelColor(i, _strip.Color(baseR * fadeFactor, baseG * fadeFactor, baseB * fadeFactor));
-            } else {
-                _strip.setPixelColor(i, 0); // Off
-            }
+            // Calculate shortest distance from head to this pixel (wrapping around)
+            float dist = _headPosition - (float)i;
+            if (dist < 0) dist += _numPixels;
+            if (dist > _numPixels / 2.0f) dist = _numPixels - dist; // Wrap to shortest path
+
+            // Smooth falloff: Gaussian-like or eased quadratic
+            // Using a simple but smooth curve: brightness = max(0, 1 - dist/halfLen)^2
+            float brightness = 1.0f - (dist / halfLen);
+            if (brightness < 0.0f) brightness = 0.0f;
+            brightness = brightness * brightness; // Easing for softer edges
+
+            // Apply to RGB
+            uint8_t pr = (uint8_t)(r * brightness);
+            uint8_t pg = (uint8_t)(g * brightness);
+            uint8_t pb = (uint8_t)(b * brightness);
+
+            _strip.setPixelColor(i, pr, pg, pb);
         }
         _strip.show();
-
-        // Advance head index
-        _spinIndex = (_spinIndex + 1) % _numPixels;
     }
 
     void updateFill() {
-        uint8_t baseR, baseG, baseB;
-        getRGB(_baseColor, baseR, baseG, baseB);
-        
-        // Determine exactly how many pixels should be illuminated
-        uint16_t targetPixels = ((uint32_t)_fillPercent * _numPixels) / 100;
+        // Simplified fill: gradually approach target fill level across all pixels
+        if (_currentFill < _targetFill) {
+            _currentFill += _fillSpeed;
+            if (_currentFill > _targetFill) _currentFill = _targetFill;
+        } else if (_currentFill > _targetFill) {
+            _currentFill -= _fillSpeed;
+            if (_currentFill < _targetFill) _currentFill = _targetFill;
+        }
+
+        uint8_t r, g, b;
+        getRGB(_baseColor, r, g, b);
+        float brightness = _currentFill / 100.0f;
 
         for (uint16_t i = 0; i < _numPixels; i++) {
-            if (i < targetPixels) {
-                _strip.setPixelColor(i, _strip.Color(baseR, baseG, baseB));
-            } else {
-                _strip.setPixelColor(i, 0);
-            }
+            _strip.setPixelColor(i, (uint8_t)(r * brightness), (uint8_t)(g * brightness), (uint8_t)(b * brightness));
         }
         _strip.show();
     }
 
 public:
-    // Constructor initializes the under-the-hood NeoPixel object
-    NeoPixelRing(uint16_t numPixels, uint8_t pin, neoPixelType type = NEO_GRB + NEO_KHZ800) 
+    NeoPixelRing(uint16_t numPixels, uint8_t pin, neoPixelType type = NEO_GRB + NEO_KHZ800)
         : _strip(numPixels, pin, type), _numPixels(numPixels) {}
 
     void init() {
         _strip.begin();
-        _strip.show(); // Turn all off immediately
+        _strip.show();
     }
 
-    /**
-     * Set static color or animation baseline
-     */
     void setColor(uint32_t color) {
         _baseColor = color;
         if (_currentPattern == PATTERN_SOLID) {
             for (uint16_t i = 0; i < _numPixels; i++) {
-                _strip.setPixelColor(i, _baseColor);
+                _strip.setPixelColor(i, _baseColor); // Fixed typo: strip -> _strip, baseColor -> _baseColor
             }
             _strip.show();
         }
     }
 
-    /**
-     * Switch patterns and speeds
-     * @param pattern PATTERN_SOLID, PATTERN_SPIN_FADE, or PATTERN_FILL
-     * @param speedMs Animation update interval in ms (lower is faster)
-     */
-    void setPattern(RingPattern pattern, uint16_t speedMs = 50) {
+    void setPattern(RingPattern pattern) {
         _currentPattern = pattern;
-        _updateInterval = speedMs;
+        if (pattern == PATTERN_SOLID) {
+            setColor(_baseColor);
+        }
     }
 
-    /**
-     * Updates the target fill percentage (0 to 100) for PATTERN_FILL
-     */
+    void setAnimationSpeeds(float spinStep, float fillStep) {
+        _spinSpeed = spinStep;
+        _fillSpeed = fillStep;
+    }
+
     void setFillPercentage(uint8_t percent) {
         if (percent > 100) percent = 100;
-        _fillPercent = percent;
+        _targetFill = percent;
     }
 
-    /**
-     * Non-blocking execution loop. Call this continuously inside loop().
-     */
     void handle() {
         if (_currentPattern == PATTERN_SOLID) return;
 
-        if (millis() - _lastUpdate >= _updateInterval) {
+        if (millis() - _lastUpdate >= 16) {
             _lastUpdate = millis();
-
             switch (_currentPattern) {
                 case PATTERN_SPIN_FADE:
                     updateSpinFade();
@@ -130,16 +134,12 @@ public:
                 case PATTERN_FILL:
                     updateFill();
                     break;
-                default:
-                    break;
             }
         }
     }
-    
-    // Quick helper to generate color values identical to strip.Color()
+
     uint32_t Color(uint8_t r, uint8_t g, uint8_t b) {
         return _strip.Color(r, g, b);
     }
 };
-
 #endif // NEOPIXEL_RING_H

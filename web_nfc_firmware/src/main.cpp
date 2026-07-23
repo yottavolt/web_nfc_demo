@@ -34,8 +34,9 @@ void setup() {
   // Initialize our new ring setup
   ring.init();
   ring.setColor(ring.Color(0, 80, 190)); // Start dim blue
-  ring.setPattern(PATTERN_SPIN_FADE, 240);
-  
+  ring.setPattern(PATTERN_SPIN_FADE);
+  ring.setAnimationSpeeds(0.02f, 0.08f);
+
   solenoids.init();
 }
 
@@ -46,6 +47,7 @@ void parseString(String input){
   if (input.startsWith("<01>")) {
 
     ring.setColor(ring.Color(0, 255, 0)); // Green fill color
+    ring.setAnimationSpeeds(0.2f, 0.4f);
     ring.setPattern(PATTERN_FILL);
     ring.setFillPercentage(50);
 
@@ -65,7 +67,8 @@ void loop() {
   ring.handle(); 
 
   // Check the NFC tag periodically without stopping the CPU
-  if (millis() - lastNFCCheck >= 2500) {
+
+  if (millis() - lastNFCCheck >= 1000) {
     lastNFCCheck = millis();
     
     String uri_read;
@@ -78,4 +81,5 @@ void loop() {
       initTag();
     }
   }
+
 }
