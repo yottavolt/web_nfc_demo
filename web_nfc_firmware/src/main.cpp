@@ -48,8 +48,9 @@ void parseString(String input){
 
     ring.setColor(ring.Color(0, 255, 0)); // Green fill color
     ring.setAnimationSpeeds(0.2f, 0.4f);
-    ring.setPattern(PATTERN_FILL);
     ring.setFillPercentage(50);
+    ring.setPattern(PATTERN_FILL);
+    
 
     //solenoids.test();
     
